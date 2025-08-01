@@ -550,24 +550,6 @@ end)
     end
 })
 
-Berikut adalah script lengkap fitur View Inventory untuk Tab Player di YoxanHub — sudah siap langsung disalin di mobile:
-
-🔍 Menarget player dari nama
-
-📦 Menampilkan item Backpack dan yang sedang dipakai (equipped)
-
-✅ UI premium, smooth, dark style
-
-🧠 Auto update tinggi
-
-📱 100% support mobile
-
-
-
----
-
-💾 Langsung tempel ini ke dalam Tab_Player:
-
 -- Variabel global
 local targetName = ""
 local ScreenGui = nil
