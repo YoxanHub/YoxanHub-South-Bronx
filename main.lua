@@ -550,166 +550,178 @@ end)
     end
 })
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local ScreenGui = nil
-local targetName = ""
+ -- Inventory UI Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "InventoryDisplay"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Enabled = false
 
--- Fungsi pencarian player
-local function findPlayerByName(name)
-	for _, player in ipairs(Players:GetPlayers()) do
-		if player.Name:lower():sub(1, #name) == name:lower() then
-			return player
+local Background = Instance.new("Frame")
+Background.Name = "Background"
+Background.Size = UDim2.new(0, 260, 0, 300)
+Background.Position = UDim2.new(1, -280, 0, 40)
+Background.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Background.BorderSizePixel = 0
+Background.Parent = ScreenGui
+Instance.new("UICorner", Background).CornerRadius = UDim.new(0, 12)
+
+local Gradient = Instance.new("UIGradient", Background)
+Gradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 45, 55)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 35))
+}
+Gradient.Rotation = 45
+
+local Stroke = Instance.new("UIStroke", Background)
+Stroke.Color = Color3.fromRGB(80, 80, 80)
+Stroke.Thickness = 1
+
+local TitleLabel = Instance.new("TextLabel", Background)
+TitleLabel.Size = UDim2.new(1, 0, 0, 30)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextScaled = true
+TitleLabel.TextWrapped = true
+TitleLabel.TextStrokeTransparency = 0.6
+TitleLabel.Text = "Inventory"
+TitleLabel.Parent = Background
+
+local ScrollFrame = Instance.new("ScrollingFrame", Background)
+ScrollFrame.Size = UDim2.new(1, -12, 1, -45)
+ScrollFrame.Position = UDim2.new(0, 6, 0, 35)
+ScrollFrame.ScrollBarThickness = 6
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+ScrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+local UIListLayout = Instance.new("UIListLayout", ScrollFrame)
+UIListLayout.Padding = UDim.new(0, 5)
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local UIPadding = Instance.new("UIPadding", ScrollFrame)
+UIPadding.PaddingTop = UDim.new(0, 5)
+
+-- Inventory Function
+local function updateInventory(playerName)
+	local Players = game:GetService("Players")
+	local targetPlayer = nil
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr.Name:lower():sub(1, #playerName) == playerName:lower() then
+			targetPlayer = plr
+			break
 		end
 	end
-end
-
--- Fungsi buat Inventory GUI
-local function createInventoryGUI(playerName)
-	local targetPlayer = findPlayerByName(playerName)
-	if not targetPlayer then return end
-
-	if ScreenGui then ScreenGui:Destroy() end
-
-	local backpack = targetPlayer:FindFirstChild("Backpack")
-	local items = (backpack and backpack:GetChildren()) or {}
-
-	local itemCounts = {}
-	for _, tool in ipairs(items) do
-		if tool:IsA("Tool") then
-			itemCounts[tool.Name] = (itemCounts[tool.Name] or 0) + 1
-		end
+	if not targetPlayer then
+		TitleLabel.Text = playerName .. " not found"
+		return
 	end
 
-	local sortedNames = {}
-	for name in pairs(itemCounts) do
-		table.insert(sortedNames, name)
-	end
-	table.sort(sortedNames)
-
-	local equippedTools = {}
 	local character = targetPlayer.Character
+	local backpack = targetPlayer:FindFirstChild("Backpack")
+	local equipped = {}
+	local backpackItems = {}
+
 	if character then
-		for _, child in ipairs(character:GetChildren()) do
-			if child:IsA("Tool") then
-				table.insert(equippedTools, child.Name)
+		for _, item in ipairs(character:GetChildren()) do
+			if item:IsA("Tool") then
+				table.insert(equipped, item.Name)
+			end
+		end
+	end
+	if backpack then
+		for _, item in ipairs(backpack:GetChildren()) do
+			if item:IsA("Tool") then
+				table.insert(backpackItems, item.Name)
 			end
 		end
 	end
 
-	local totalLines = #equippedTools + #sortedNames + (#equippedTools > 0 and 1 or 0)
-	local maxVisible = 10
-	local guiHeight = totalLines > 0 and (35 + math.min(totalLines, maxVisible) * 29 + 10) or 50
-
-	ScreenGui = Instance.new("ScreenGui")
-	ScreenGui.Name = "InventoryDisplay"
-	ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	ScreenGui.ResetOnSpawn = false
-	ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
-	local Background = Instance.new("Frame")
-	Background.Size = UDim2.new(0, 260, 0, guiHeight)
-	Background.Position = UDim2.new(1, -280, 0, 40)
-	Background.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	Background.BorderSizePixel = 0
-	Background.Parent = ScreenGui
-	Instance.new("UICorner", Background).CornerRadius = UDim.new(0, 12)
-
-	local Gradient = Instance.new("UIGradient", Background)
-	Gradient.Color = ColorSequence.new{
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 45, 55)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 35))
-	}
-	Gradient.Rotation = 45
-
-	local Stroke = Instance.new("UIStroke", Background)
-	Stroke.Color = Color3.fromRGB(80, 80, 80)
-	Stroke.Thickness = 1
-
-	local TitleLabel = Instance.new("TextLabel", Background)
-	TitleLabel.Size = UDim2.new(1, 0, 0, 30)
-	TitleLabel.BackgroundTransparency = 1
-	TitleLabel.Font = Enum.Font.GothamBold
-	TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	TitleLabel.TextScaled = true
-	TitleLabel.Text = playerName .. "'s Inventory"
-
-	if totalLines > 0 then
-		local ScrollFrame = Instance.new("ScrollingFrame", Background)
-		ScrollFrame.Size = UDim2.new(1, -12, 1, -45)
-		ScrollFrame.Position = UDim2.new(0, 6, 0, 35)
-		ScrollFrame.ScrollBarThickness = 6
-		ScrollFrame.BackgroundTransparency = 1
-		ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-		ScrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-		ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, totalLines * 29)
-
-		local UIListLayout = Instance.new("UIListLayout", ScrollFrame)
-		UIListLayout.Padding = UDim.new(0, 5)
-		UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-		local UIPadding = Instance.new("UIPadding", ScrollFrame)
-		UIPadding.PaddingTop = UDim.new(0, 5)
-
-		if #equippedTools > 0 then
-			local label = Instance.new("TextLabel", ScrollFrame)
-			label.Size = UDim2.new(1, -12, 0, 24)
-			label.BackgroundColor3 = Color3.fromRGB(80, 40, 40)
-			label.BorderSizePixel = 0
-			label.Font = Enum.Font.GothamBold
-			label.TextColor3 = Color3.fromRGB(255, 255, 255)
-			label.TextScaled = true
-			label.Text = "-- Equipped --"
-			Instance.new("UICorner", label).CornerRadius = UDim.new(0, 6)
-
-			for _, name in ipairs(equippedTools) do
-				local toolLabel = Instance.new("TextLabel", ScrollFrame)
-				toolLabel.Size = UDim2.new(1, -12, 0, 24)
-				toolLabel.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
-				toolLabel.BorderSizePixel = 0
-				toolLabel.Font = Enum.Font.Gotham
-				toolLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-				toolLabel.TextScaled = true
-				toolLabel.Text = name
-				Instance.new("UICorner", toolLabel).CornerRadius = UDim.new(0, 6)
-			end
+	-- Clear existing
+	for _, v in pairs(ScrollFrame:GetChildren()) do
+		if v:IsA("TextLabel") then
+			v:Destroy()
 		end
+	end
 
-		for _, name in ipairs(sortedNames) do
-			local amount = itemCounts[name]
+	TitleLabel.Text = targetPlayer.Name .. "'s Inventory"
+
+	if #equipped > 0 then
+		local label = Instance.new("TextLabel", ScrollFrame)
+		label.Size = UDim2.new(1, -12, 0, 24)
+		label.BackgroundColor3 = Color3.fromRGB(80, 40, 40)
+		label.BorderSizePixel = 0
+		label.Font = Enum.Font.GothamBold
+		label.TextColor3 = Color3.fromRGB(255, 255, 255)
+		label.TextScaled = true
+		label.Text = "-- Equipped --"
+		Instance.new("UICorner", label).CornerRadius = UDim.new(0, 6)
+
+		for _, name in ipairs(equipped) do
+			local toolLabel = Instance.new("TextLabel", ScrollFrame)
+			toolLabel.Size = UDim2.new(1, -12, 0, 24)
+			toolLabel.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
+			toolLabel.BorderSizePixel = 0
+			toolLabel.Font = Enum.Font.Gotham
+			toolLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+			toolLabel.TextScaled = true
+			toolLabel.Text = name
+			Instance.new("UICorner", toolLabel).CornerRadius = UDim.new(0, 6)
+		end
+	end
+
+	if #backpackItems > 0 then
+		local label = Instance.new("TextLabel", ScrollFrame)
+		label.Size = UDim2.new(1, -12, 0, 24)
+		label.BackgroundColor3 = Color3.fromRGB(40, 80, 40)
+		label.BorderSizePixel = 0
+		label.Font = Enum.Font.GothamBold
+		label.TextColor3 = Color3.fromRGB(255, 255, 255)
+		label.TextScaled = true
+		label.Text = "-- Backpack --"
+		Instance.new("UICorner", label).CornerRadius = UDim.new(0, 6)
+
+		for _, name in ipairs(backpackItems) do
 			local label = Instance.new("TextLabel", ScrollFrame)
 			label.Size = UDim2.new(1, -12, 0, 24)
-			label.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+			label.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
 			label.BorderSizePixel = 0
 			label.Font = Enum.Font.Gotham
 			label.TextColor3 = Color3.fromRGB(255, 255, 255)
 			label.TextScaled = true
-			label.Text = amount > 1 and (name .. " x" .. amount) or name
+			label.Text = name
 			Instance.new("UICorner", label).CornerRadius = UDim.new(0, 6)
 		end
 	end
 end
 
--- Tambah TextBox dan Toggle ke Tab Player
-Tab_Player:AddTextbox({
+-- Toggle + Input Target UI
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/1nig1htmare1234/SCRIPTS/main/Orion.lua"))()
+local Window = OrionLib:MakeWindow({Name = "YoxanHub", HidePremium = false, SaveConfig = false})
+local Tab = Window:MakeTab({Name = "Player", Icon = "", PremiumOnly = false})
+
+local targetName = ""
+
+Tab:AddTextbox({
 	Name = "Target Name",
 	Default = "",
 	TextDisappear = false,
-	Callback = function(name)
-		targetName = name
+	Callback = function(txt)
+		targetName = txt
 	end
 })
 
-Tab_Player:AddToggle({
+Tab:AddToggle({
 	Name = "View Inventory",
 	Default = false,
 	Callback = function(state)
-		if state and targetName then
-			createInventoryGUI(targetName)
-		elseif ScreenGui then
-			ScreenGui:Destroy()
-			ScreenGui = nil
+		if state and targetName ~= "" then
+			ScreenGui.Enabled = true
+			updateInventory(targetName)
+		else
+			ScreenGui.Enabled = false
 		end
 	end
-})
+})		
