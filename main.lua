@@ -550,27 +550,27 @@ end)
     end
 })
 
--- Variabel global
-local targetName = ""
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local ScreenGui = nil
+local targetName = ""
 
--- Fungsi mencari player berdasarkan nama
+-- Fungsi pencarian player
 local function findPlayerByName(name)
-	for _, plr in ipairs(game.Players:GetPlayers()) do
-		if plr.Name:lower():sub(1, #name) == name:lower() then
-			return plr
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player.Name:lower():sub(1, #name) == name:lower() then
+			return player
 		end
 	end
 end
 
--- Fungsi membuat UI Inventory
+-- Fungsi buat Inventory GUI
 local function createInventoryGUI(playerName)
 	local targetPlayer = findPlayerByName(playerName)
 	if not targetPlayer then return end
 
-	if ScreenGui then
-		ScreenGui:Destroy()
-	end
+	if ScreenGui then ScreenGui:Destroy() end
 
 	local backpack = targetPlayer:FindFirstChild("Backpack")
 	local items = (backpack and backpack:GetChildren()) or {}
@@ -589,9 +589,9 @@ local function createInventoryGUI(playerName)
 	table.sort(sortedNames)
 
 	local equippedTools = {}
-	local char = targetPlayer.Character
-	if char then
-		for _, child in ipairs(char:GetChildren()) do
+	local character = targetPlayer.Character
+	if character then
+		for _, child in ipairs(character:GetChildren()) do
 			if child:IsA("Tool") then
 				table.insert(equippedTools, child.Name)
 			end
@@ -605,10 +605,10 @@ local function createInventoryGUI(playerName)
 	ScreenGui = Instance.new("ScreenGui")
 	ScreenGui.Name = "InventoryDisplay"
 	ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+	ScreenGui.ResetOnSpawn = false
+	ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 	local Background = Instance.new("Frame")
-	Background.Name = "Background"
 	Background.Size = UDim2.new(0, 260, 0, guiHeight)
 	Background.Position = UDim2.new(1, -280, 0, 40)
 	Background.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -633,9 +633,7 @@ local function createInventoryGUI(playerName)
 	TitleLabel.Font = Enum.Font.GothamBold
 	TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	TitleLabel.TextScaled = true
-	TitleLabel.TextWrapped = true
-	TitleLabel.TextStrokeTransparency = 0.6
-	TitleLabel.Text = (totalLines > 0 and (playerName .. "'s Inventory")) or (playerName .. "'s Inventory: Empty")
+	TitleLabel.Text = playerName .. "'s Inventory"
 
 	if totalLines > 0 then
 		local ScrollFrame = Instance.new("ScrollingFrame", Background)
@@ -693,13 +691,13 @@ local function createInventoryGUI(playerName)
 	end
 end
 
--- Tambahkan ke Tab_Player
+-- Tambah TextBox dan Toggle ke Tab Player
 Tab_Player:AddTextbox({
-	Name = "Player Name",
+	Name = "Target Name",
 	Default = "",
 	TextDisappear = false,
-	Callback = function(txt)
-		targetName = txt
+	Callback = function(name)
+		targetName = name
 	end
 })
 
@@ -707,13 +705,11 @@ Tab_Player:AddToggle({
 	Name = "View Inventory",
 	Default = false,
 	Callback = function(state)
-		if state and targetName and targetName ~= "" then
+		if state and targetName then
 			createInventoryGUI(targetName)
-		else
-			if ScreenGui then
-				ScreenGui:Destroy()
-				ScreenGui = nil
-			end
+		elseif ScreenGui then
+			ScreenGui:Destroy()
+			ScreenGui = nil
 		end
 	end
 })
