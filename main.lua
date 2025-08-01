@@ -697,11 +697,6 @@ local function updateInventory(playerName)
 	end
 end
 
-local Window = OrionLib:MakeWindow({Name = "YoxanHub", HidePremium = false, SaveConfig = false})
-local Tab = Window:MakeTab({Name = "Player", Icon = "", PremiumOnly = false})
-
-local targetName = ""
-
 Tab:AddTextbox({
 	Name = "Target Name",
 	Default = "",
