@@ -697,8 +697,6 @@ local function updateInventory(playerName)
 	end
 end
 
--- Toggle + Input Target UI
-local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/1nig1htmare1234/SCRIPTS/main/Orion.lua"))()
 local Window = OrionLib:MakeWindow({Name = "YoxanHub", HidePremium = false, SaveConfig = false})
 local Tab = Window:MakeTab({Name = "Player", Icon = "", PremiumOnly = false})
 
