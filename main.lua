@@ -540,6 +540,117 @@ end)
                 end
             })
 
+				-- Inventory UI Elements (Should be placed at the top inside Tab UI)
+local inventoryFrame = Instance.new("Frame")
+inventoryFrame.Name = "InventoryFrame"
+inventoryFrame.Size = UDim2.new(1, -10, 0, 200)
+inventoryFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+inventoryFrame.BorderSizePixel = 0
+inventoryFrame.Visible = false
+inventoryFrame.Parent = RightGroupBox.SectionFrame
+
+local itemList = Instance.new("ScrollingFrame", inventoryFrame)
+itemList.Size = UDim2.new(1, -10, 1, -30)
+itemList.Position = UDim2.new(0, 5, 0, 30)
+itemList.BackgroundTransparency = 1
+itemList.BorderSizePixel = 0
+itemList.ScrollBarThickness = 6
+itemList.CanvasSize = UDim2.new(0, 0, 0, 0)
+itemList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+itemList.ScrollingDirection = Enum.ScrollingDirection.Y
+
+local layout = Instance.new("UIListLayout", itemList)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Padding = UDim.new(0, 5)
+
+local textbox = RightGroupBox:AddTextbox({
+	Name = "Target Player",
+	Default = "",
+	PlaceholderText = "Enter player name...",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(value)
+		targetName = value
+	end
+})
+
+RightGroupBox:AddButton({
+	Name = "View Inventory",
+	Callback = function()
+		local function findPlayerByName(name)
+			for _, plr in ipairs(game.Players:GetPlayers()) do
+				if plr.Name:lower():find(name:lower()) then
+					return plr
+				end
+			end
+			return nil
+		end
+
+		inventoryFrame.Visible = false
+		for _, child in ipairs(itemList:GetChildren()) do
+			if child:IsA("TextLabel") then
+				child:Destroy()
+			end
+		end
+
+		local target = findPlayerByName(targetName)
+		if not target then
+			local warningLabel = Instance.new("TextLabel", itemList)
+			warningLabel.Text = "Player not found"
+			warningLabel.Size = UDim2.new(1, 0, 0, 20)
+			warningLabel.BackgroundTransparency = 1
+			warningLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+			warningLabel.TextScaled = true
+			return
+		end
+
+		local backpack = target:FindFirstChild("Backpack")
+		local char = target.Character
+		local equipped = {}
+		local tools = {}
+
+		if char then
+			for _, tool in ipairs(char:GetChildren()) do
+				if tool:IsA("Tool") then
+					table.insert(equipped, tool.Name .. " (Equipped)")
+				end
+			end
+		end
+		if backpack then
+			for _, tool in ipairs(backpack:GetChildren()) do
+				if tool:IsA("Tool") then
+					table.insert(tools, tool.Name)
+				end
+			end
+		end
+
+		local allItems = {}
+		for _, item in ipairs(equipped) do table.insert(allItems, item) end
+		for _, item in ipairs(tools) do table.insert(allItems, item) end
+
+		if #allItems == 0 then
+			local label = Instance.new("TextLabel", itemList)
+			label.Text = "Inventory is empty"
+			label.Size = UDim2.new(1, 0, 0, 20)
+			label.BackgroundTransparency = 1
+			label.TextColor3 = Color3.new(1, 1, 1)
+			label.TextScaled = true
+		else
+			for _, itemName in ipairs(allItems) do
+				local label = Instance.new("TextLabel", itemList)
+				label.Text = itemName
+				label.Size = UDim2.new(1, 0, 0, 22)
+				label.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+				label.TextColor3 = Color3.fromRGB(255, 255, 255)
+				label.Font = Enum.Font.Gotham
+				label.TextScaled = true
+				Instance.new("UICorner", label).CornerRadius = UDim.new(0, 4)
+			end
+		end
+
+		inventoryFrame.Visible = true
+	end
+})
+
         else
             OrionLib:MakeNotification({
                 Name = "❌ Invalid Key",
